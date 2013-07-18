@@ -1,0 +1,244 @@
+\documentclass[12pt]{article}
+\usepackage{fullpage}
+\usepackage{amsmath,amsthm,amsfonts}
+\usepackage{graphicx}
+\usepackage{psfrag}
+
+\newcommand{\var}{\ensuremath{\text{Var}}}
+\newcommand{\cov}{\ensuremath{\text{Cov}}}
+
+\title{Standard Errors with Antithetic Sampling}
+\author{Nicholas R. Kirchner}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+There was a discussion as to whether to divide by $N$ (the number of
+pairs generated) or $2N$ (the total number of values) when
+computing the standard error of a quantity estimated through
+antithetic variance reduction.  From a theoretical perspective, the
+correct answer differs from both of these.
+
+In fact, if the two values $x_i$ and $x_i'$ generated via antithetic
+sampling are negatively correlated, this method turns out to be even
+more powerful than dividing by $2N$ from the perspective of reducing
+standard error.
+
+The reason for the reduced standard error is that the covariance
+between the two values should be added before division by $2N$, and
+therefore a negative covariance results in a lowered standard error.
+
+From a computational perspective, it is not necessary to compute any
+covariances.  Rather, it is easiest to simply make a list of the
+quantities $\frac{x_i + x_i'}{2}$ and compute the mean and standard
+error of that list.
+
+\section{Properties of Variance}
+If $X$ and $Y$ are random variables and $a$ a constant, we have the
+following properties:
+$$ \var (aX) = a^2\var(X) $$
+$$ \var (X+Y) = \var(X) + \var(Y) + 2\cov(X,Y) $$
+In particular, when $X$ and $Y$ are independent we have $\cov(X,Y)=0$,
+so
+$$ \var (X+Y) = \var(X) + \var(Y) $$
+
+\section{The Usual Case}
+
+First, back to basics.  Our usual mean estimator is
+$$ \hat{\mu} = \frac{1}{N} \sum_{i=1}^N x_i $$
+where $N$ is the number of data points, and the $x_i$ are the data
+points drawn from random variables $X_i$.  If we presume that the
+$X_i$ are I.I.D. (independent and identically distributed), we can calculate
+$$ \var(\hat{\mu}) = \var \left( \frac{1}{N} \sum_{i=1}^N X_i \right) $$
+$$ = \frac{1}{N^2} \var \left( \sum_{i = 1}^N X_i \right) $$
+Here's where independence comes in: we needn't worry about covariance.
+$$ = \frac{1}{N^2} \sum_{i = 1}^N \var(X_i) $$
+$$ = \frac{1}{N}\var(X_i) $$
+
+The last step is justified by noting that the $X_i$ are identically
+distributed, so that all the $\var(X_i)$ are equal.  Taking a square
+root yields the standard error.
+
+\section{Correlated Pairs}
+
+\subsection{Finding the Standard Error}
+
+When we estimate price using antithetic variance reduction, we are
+generating estimates of the price (or delta, or gamma, etc.) in pairs.  Let $x_i$ denote the
+price obtained from the $i$th path actually generated, and $x_i'$ denote the
+price obtained from the corresponding anti-correlated path.  $X_i$
+will denote the random variable from which $x_i$ is drawn, and $X_i'$
+will denote the random variable from which $x_i'$ is drawn.
+
+We have the following properties:
+\begin{enumerate}
+\item $X_i$ and $X_i'$ are not independent.
+\item Each pair $X_i$,$X_i'$ is independent of any other pair
+  $X_j,X_j'$.
+\item All of the random variables here have the same distribution.
+\end{enumerate}
+
+Our estimator for the mean is
+$$ \hat{\mu} = \frac{1}{2N} \sum_{i=1}^N x_i + x_i' $$
+where $N$ is the number of pairs of values generated (so that the
+total number of values considered here is $2N$).  This remains an
+unbiased estimator.  Its variance is given by
+$$ \var(\hat{\mu}) = \var \left( \frac{1}{2N} \sum_{i=1}^N
+  X_i + X_i' \right) $$
+$$ = \var \left( \frac{1}{N} \sum_{i=1}^N \frac{X_i + X_i'}{2}
+\right) $$
+$$ = \frac{1}{N^2} \var \left( \sum_{i=1}^N \frac{X_i + X_i'}{2}
+\right) $$
+Now, the random variables $X_i + X_i'$ are I.I.D., which gives us
+$$ = \frac{1}{N^2} \sum_{i = 1}^N \var \left( \frac{X_i + X_i'}{2}
+\right) $$
+$$ = \frac{1}{N} \var \left( \frac{X_i + X_i'}{2} \right) $$
+
+(As before, all the items in the sum are the same.)  The square root of this is the standard error.  This implies that the
+standard error for antithetic estimation should be calculated like so:
+\begin{enumerate}
+\item Make a list of the quantities $\frac{x_i + x_i'}{2}$ (no need to
+  keep track of $x_i$ or $x_i'$)
+\item Calculate the average of that list, which gives you the mean
+\item Calculate the variance of that list and divide by its length
+\item Take a square root of the previous step to get the standard error.
+\end{enumerate}
+
+\subsection{Analysis of Result}
+
+Let us now analyze the effectiveness of this method.
+$$ \var(\hat{\mu}) = \frac{1}{N} \var \left( \frac{X_i + X_i'}{2}
+\right) $$
+$$ = \frac{1}{4N} \var (X_i + X_i') $$
+$X_i$ and $X_i'$ are not independent.  Therefore,
+
+$$ \var(\hat{\mu}) = \frac{1}{4N} \left( \var(X_i) + \var (X_i') +
+  2\cov (X_i,X_i') \right) $$
+
+$X_i$ and $X_i'$ are identically distributed, so their variances are
+equal.  Thus,
+
+$$ \var(\hat{\mu}) = \frac{1}{4N} \left( 2\var(X_i) +
+  2\cov (X_i,X_i') \right) $$
+
+$$ = \frac{1}{2N} \left( \var(X_i) + \cov(X_i,X_i')
+\right) $$
+(And we get the standard error by taking the square root of this.)
+
+Now, we can be confident that our covariance is negative.  If one
+member of our pair is high, we would strongly suspect that the other
+is low.  That
+makes antithetic variance reduction powerful.  Not only do we get to
+divide the variance by $2N$, we also get to subtract a bit off it
+first.  Antithetic variance reduction as presented in class on $N$
+pairs of prices actually results in a lower standard error than
+straight random sampling on $2N$ data points!
+
+For example, if $X_i$ and $X_i'$ are prices generated with the inputs
+$S = 50$, $K = 50$, $r = 0.05$, $\sigma = 0.5$ and $T = 1$, it happens
+that $\cov(X_i,X_i') \approx -\frac{1}{4} \var(X_i)$.  (Note: this
+covariance will vary depending on the inputs).  If we generate $N$
+pairs, we will get
+
+$$ \var(\hat{\mu}) \approx \frac{3}{8} \frac{\var(X_i)}{N} $$
+
+$$ \var(\hat{\mu}_{antithetic}) \approx \frac{3}{8}
+\var(\hat{\mu}_{normal}) $$
+
+For these particular inputs, we would therefore need only 3/8 as many
+random numbers generated in the antithetic case compared to the usual
+case in order to match standard errors.  To put it another way, if we
+generate 1,000,000 pairs via the antithetic method, we'd need roughly
+2,700,000 simulations by the usual method to get the same standard
+error.
+
+\section{Appendix: The European Option Price Distribution}
+
+When it comes to our particular case, we generate our two prices by
+first generating two numbers from a standard normal
+distribution, with the second being the negative of the first.  Let's
+notate these as $\epsilon_i$ and $\epsilon_i'$, with $\epsilon_i' =
+- \epsilon_i$.  We then compute the prices $X_i$ and $X_i'$ based on
+$\epsilon_i$ and $\epsilon_i'$.
+
+The correlation coefficient between two random variables $X$ and $Y$
+is defined as
+$$ \rho_{XY} = \frac{\cov(X,Y)}{\sqrt{\var(X) \var(Y)}} $$
+A famous theorem (Cauchy-Schwarz-Bunyakovsky) asserts that this
+quantity is always between -1 and 1.  Further, it will be equal to
+$\pm 1$ if and only if the $Y = cX$ for some constant $c \neq 0$.  (This is to
+say that whenever we simultaneously sample a value from $X$ and a
+value from $Y$, the ratio of the two samples will always be $c$.)
+
+If $X$ and $X'$ are identically distributed then their variances are
+equal, so that
+$$ \rho_{XX'} = \frac{\cov(X,X')}{\var(X)} $$
+
+We therefore have
+$$ \rho_{\epsilon_i \epsilon_i'} = -1 $$
+
+However, for the inputs $S = 50$, $K = 50$, $r = 0.05$, $\sigma = 0.5$
+and $T = 1$, I empirically found
+$$ \rho_{X_i X_i'} \approx -\frac{1}{4} $$
+
+One might be a bit confused by this.  After all, if we know
+$\epsilon_i$, we can say definitively and with no effort what
+$\epsilon_i'$ is.  We get $X_i$ and $X_i'$ with these values.
+In this sense, $X_i$ and $X_i'$ are completely dependent, just as
+$\epsilon_i$ and $\epsilon_i'$ are.  Why, then, are the respective
+correlation coefficients different?
+
+The answer to the question is that correlation is not measuring
+dependence in general.  It's measuring linearity, which is only one
+specific kind of dependence.
+
+To illustrate the point, we can sample $\epsilon_i$ and $\epsilon_i'$
+from a standard normal as shown in figure ~\ref{normaldist}.  If we
+make many such samples and plot the ordered pairs
+$(\epsilon_i,\epsilon_i')$, we obtain the graph shown in figure
+~\ref{normrelate}.  The relation $\epsilon_i' = -\epsilon_i$ gives us
+a perfectly straight line.
+
+\begin{figure}[h]
+\centering
+\includegraphics{normaldist}
+\caption{Antithetic samples from the standard normal}
+\label{normaldist}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics{normalscatter}
+\caption{Relation between antithetic samples from the standard normal}
+\label{normrelate}
+\end{figure}
+
+Now, we use $\epsilon_i$ and $\epsilon_i'$ to obtain option values $X_i$
+and $X_i'$ for an option with $S = 50$, $K = 20$ (note the change), $r
+= 0.05$, $\sigma = 0.5$ and $T = 1$.  The $X_i$ and $X_i'$ are shown
+in figure ~\ref{pricedist}.
+
+If we do many such samples and plot the ordered pairs $(X_i,X_i')$, we
+obtain the plot in figure ~\ref{pricerelate}.  Note that while there
+is clearly much dependence between $X_i$ and $X_i'$, it is not
+all linear dependence.
+
+\begin{figure}[h]
+\centering
+\includegraphics{pricedist}
+\caption{Distribution of possible option values (K = 20).  Note that about
+  4.62\% of the area is to the left of $x=0$.}
+\label{pricedist}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics{optionscatter}
+\caption{Relation between antithetic samples for the option price}
+\label{pricerelate}
+\end{figure}
+
+\end{document}

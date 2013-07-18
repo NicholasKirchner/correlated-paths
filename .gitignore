@@ -1,0 +1,9 @@
+auto*
+*.aux
+*.log
+normaldist.pdf
+pricedist.pdf
+optionscatter.pdf
+normalscatter.pdf
+.DS_Store*
+graphs*
